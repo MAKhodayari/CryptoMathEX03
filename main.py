@@ -1,5 +1,63 @@
-from numpy import zeros
-from math import sqrt
+from numpy import zeros, array, add, matmul, subtract, sqrt
+
+
+def ExtractFileInfo(Path, Mode):
+    CharCode = list()
+    if Mode == 'EA':
+        with open(Path, 'rb') as File:
+            for Row in File.readlines():
+                CharCode.append(list(Row.strip()))
+    elif Mode == 'EB':
+        with open(Path, 'r') as File:
+            for Row in File.readlines():
+                CharCode.append(Row.strip().split(' '))
+    return CharCode
+
+
+def Prime(Number):
+    if Number < 2:
+        return False
+    elif Number == 2:
+        return True
+    else:
+        for i in range(3, int(sqrt(Number)) + 1, 2):
+            if Number % i == 0:
+                return False
+        return True
+
+
+def Factorize(Number):
+    Factor = list()
+    if Number % 2 == 0:
+        Factor.append(2)
+    for i in range(3, Number + 1, 2):
+        if Number % i == 0 and Prime(i):
+            Factor.append(i)
+    return Factor
+
+
+def ModularDivision(Rows, Factors):
+    Remainder = list()
+    for Row in Rows:
+        Temp1 = list()
+        for Num in Row:
+            Temp2 = list()
+            for Factor in Factors:
+                Temp2.append(Num % Factor)
+            Temp1.append(Temp2)
+        Remainder.append(Temp1)
+    return Remainder
+
+
+def AffineHill(Rows, Key, B, Base, Mode):
+    Temp = list()
+    for Mat in Rows:
+        if Mode == 'E':
+            Temp.append(add(matmul(Key, Mat), B).tolist())
+        elif Mode == 'D':
+            Temp.append(matmul(Key, subtract(Mat, B)).tolist())
+    AffineHillRes = ModularDivision(Temp, Base)
+    return AffineHillRes
 
 
 def KeyStr2Int(KeyStr):
@@ -13,16 +71,14 @@ def KeyStr2Int(KeyStr):
 
 
 def GenerateKey():
-    PrimeFactors = input('Enter prime factors: ').split(' ')
+    Base = input('Enter base number N: ')
     HyperBlockKey = input('Enter Affine-Hill key values: ').split(' ')
     AffineHillB = input('Enter Affine-Hill B values: ').split(' ')
-    KeyPath = input('Enter location to save key file: ') + '\Key.txt'
+    # KeyPath = input('Enter location to save key file: ') + '\Key.txt'
+    KeyPath = r'C:\Users\User\Desktop\T3\Key.txt'
     AffineHillKey = KeyStr2Int(HyperBlockKey)
     with open(KeyPath, 'w') as KeyFile:
-        KeyFile.write('Prime factors: ' + '\n')
-        for Num in PrimeFactors:
-            KeyFile.write(Num + ' ')
-        KeyFile.write('\n')
+        KeyFile.write('N: ' + Base + '\n')
         KeyFile.write('Affine-Hill key: ' + '\n')
         for Row in AffineHillKey:
             for Num in Row:
@@ -33,8 +89,50 @@ def GenerateKey():
             KeyFile.write(Num + '\n')
 
 
+def ExtractKeyInfo(Path):
+    with open(Path, 'r') as File:
+        Info = list()
+        for Row in File.readlines():
+            Info.append(Row.strip().split(' '))
+    N = int(Info[0][-1])
+    PrimeFactors = Factorize(N)
+    Size = len(Info[2])
+    AffineHillKey = list()
+    for Row in Info[2:2 + Size]:
+        AffineHillKey.append(list(Row))
+    for i in range(len(AffineHillKey)):
+        for j in range(len(AffineHillKey[i])):
+            AffineHillKey[i][j] = int(AffineHillKey[i][j])
+    AffineHillB = list()
+    for Num in Info[3 + Size:]:
+        AffineHillB.append(int(Num[0]))
+    AffineHillB = array(AffineHillB).reshape(-1, 1).tolist()
+    return N, PrimeFactors, AffineHillKey, AffineHillB
+
+
 def Encrypt():
-    pass
+    # KeyPath = input('Enter key location: ')
+    # FilePath = input('Enter original file location: ')
+    # ASCIIFilePath = input('Enter location to save original file in ASCII format: ') + '\OriginalASCII.txt'
+    # EncryptedPath = input('Enter location to save encrypted file: ') + '\Encrypted.txt'
+    KeyPath = r'C:\Users\User\Desktop\T3\Key.txt'
+    FilePath = r'C:\Users\User\Desktop\T3\1.txt'
+    ASCIIFilePath = r'C:\Users\User\Desktop\T3\OriginalASCII.txt'
+    EncryptedPath = r'C:\Users\User\Desktop\T3\Encrypted.txt'
+    N, PrimeFactors, AffineHillKey, AffineHillB = ExtractKeyInfo(KeyPath)
+    CharD = ExtractFileInfo(FilePath, 'EA')
+    Remainders = ModularDivision(CharD, PrimeFactors)
+    with open(EncryptedPath, 'w') as EncryptedFile:
+        for Row in Remainders:
+            for Rem in Row:
+                for Num in Rem:
+                    EncryptedFile.write(str(Num) + ' ')
+            EncryptedFile.write('\n')
+    with open(ASCIIFilePath, 'w') as ASCIIFile:
+        for Row in CharD:
+            for Num in Row:
+                ASCIIFile.write(str(Num) + ' ')
+            ASCIIFile.write('\n')
 
 
 def Decrypt():
@@ -55,6 +153,15 @@ def Menu():
 
 
 if __name__ == '__main__':
+    # a = ExtractFileInfo(r'C:\Users\User\Desktop\T3\1.txt', 'EA')
+    # b, c, d, e = ExtractKeyInfo(r'C:\Users\User\Desktop\T3\Key.txt')
+    # f = ModularDivision(a, c)
+    # print(a)
+    # print(b)
+    # print(c)
+    # print(d)
+    # print(e)
+    # print(f)
     print('Welcome.')
     print('Please select your desired action from the list below.' + '\n')
     Menu()
