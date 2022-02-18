@@ -1,16 +1,20 @@
 from numpy import zeros, array, add, matmul, subtract, sqrt
 
 
-def ExtractFileInfo(Path, Mode):
+def ExtractFileInfo(Path, Mode, Size=1):
     CharCode = list()
     if Mode == 'EA':
         with open(Path, 'rb') as File:
             for Row in File.readlines():
                 CharCode.append(list(Row.strip()))
-    elif Mode == 'EB':
+    elif Mode == 'ER':
         with open(Path, 'r') as File:
             for Row in File.readlines():
-                CharCode.append(Row.strip().split(' '))
+                Row = Row.strip().split(' ')
+                Temp = list()
+                for i in range(0, len(Row), Size):
+                    Temp.append(Row[i:i + Size])
+                CharCode.append(Temp)
     return CharCode
 
 
@@ -36,17 +40,44 @@ def Factorize(Number):
     return Factor
 
 
-def ModularDivision(Rows, Factors):
+def ModularDivision(Rows, Factors, Mode):
     Remainder = list()
     for Row in Rows:
         Temp1 = list()
-        for Num in Row:
+        for Mat in Row:
             Temp2 = list()
-            for Factor in Factors:
-                Temp2.append(Num % Factor)
+            for Col in Mat:
+                Temp3 = list()
+                for Num in Col:
+                    if Mode == 'B':
+                        Temp3.append(Num % Factors)
+                    elif Mode == 'PF':
+                        for Factor in Factors:
+                            Temp3.append(Num % Factor)
+                Temp2.append(Temp3)
             Temp1.append(Temp2)
         Remainder.append(Temp1)
     return Remainder
+
+
+def SoloBlock(Rows, Size):
+    HyperBlock = list()
+    for Row in Rows:
+        # AppendedRow = ''.join(Row)
+        BlockTemp = list()
+        if len(Row) % Size == 0:
+            Count = len(Row) // Size
+        else:
+            Count = len(Row) // Size + 1
+        for c in range(Count):
+            Temp = zeros((Size, 1), int)
+            for i in range(Size):
+                if len(Row) != 0:
+                    Temp[i][0] = Row[0]
+                    Row = Row[1:]
+            BlockTemp.append(Temp.tolist())
+        HyperBlock.append(BlockTemp)
+    return HyperBlock
 
 
 def AffineHill(Rows, Key, B, Base, Mode):
@@ -56,7 +87,7 @@ def AffineHill(Rows, Key, B, Base, Mode):
             Temp.append(add(matmul(Key, Mat), B).tolist())
         elif Mode == 'D':
             Temp.append(matmul(Key, subtract(Mat, B)).tolist())
-    AffineHillRes = ModularDivision(Temp, Base)
+    AffineHillRes = ModularDivision(Temp, Base, 'B')
     return AffineHillRes
 
 
@@ -121,12 +152,15 @@ def Encrypt():
     EncryptedPath = r'C:\Users\User\Desktop\T3\Encrypted.txt'
     N, PrimeFactors, AffineHillKey, AffineHillB = ExtractKeyInfo(KeyPath)
     CharD = ExtractFileInfo(FilePath, 'EA')
-    Remainders = ModularDivision(CharD, PrimeFactors)
+    CharH = SoloBlock(CharD, len(AffineHillKey))
+    CharAH = AffineHill(CharH, AffineHillKey, AffineHillB, N, 'E')
+    CharR = ModularDivision(CharAH, PrimeFactors, 'PF')
     with open(EncryptedPath, 'w') as EncryptedFile:
-        for Row in Remainders:
-            for Rem in Row:
-                for Num in Rem:
-                    EncryptedFile.write(str(Num) + ' ')
+        for Row in CharR:
+            for Mat in Row:
+                for Col in Mat:
+                    for Num in Col:
+                        EncryptedFile.write(str(Num) + ' ')
             EncryptedFile.write('\n')
     with open(ASCIIFilePath, 'w') as ASCIIFile:
         for Row in CharD:
@@ -136,7 +170,17 @@ def Encrypt():
 
 
 def Decrypt():
-    pass
+    # KeyPath = input('Enter key location: ')
+    # EncryptedPath = input('Enter Encrypted file location: ')
+    # # Save location for decrypted text file
+    # DecryptedPath = input('Enter location to save decrypted file: ') + '\Decrypted.txt'
+    # ASCIIDecryptedPath = input('Enter location to save ASCII decrypted file: ') + '\DecryptedASCII.txt'
+    KeyPath = r'C:\Users\User\Desktop\T3\Key.txt'
+    EncryptedPath = r'C:\Users\User\Desktop\T3\Encrypted.txt'
+    DecryptedPath = r'C:\Users\User\Desktop\T3\Decrypted.txt'
+    ASCIIDecryptedPath = r'C:\Users\User\Desktop\T3\DecryptedASCII.txt'
+    N, PrimeFactors, AffineHillKey, AffineHillB = ExtractKeyInfo(KeyPath)
+    print(ExtractFileInfo(EncryptedPath, 'ER', len(PrimeFactors)))
 
 
 def DiscoverKey():
