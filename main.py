@@ -227,20 +227,26 @@ def ExtractKeyInfo(Path):
             Info.append(Row.strip().split(' '))
     N = int(Info[0][-1])
     PrimeFactors = Factorize(N)
-    Size = len(Info[2]) // len(PrimeFactors)
-    AffineHillKeyCRT = list()
-    for Row in Info[2:2 + Size]:
-        Temp = list()
-        for i in range(0, len(Row), len(PrimeFactors)):
-            Temp.append(Row[i:i + len(PrimeFactors)])
-        AffineHillKeyCRT.append(Temp)
-    AffineHillKey = SolveCRT(AffineHillKeyCRT, PrimeFactors)
-    AffineHillBCRT = list()
-    Temp = list()
-    for Row in Info[3 + Size:]:
-        Temp.append(Row)
-    AffineHillBCRT.append(Temp)
-    AffineHillB = SolveCRT(AffineHillBCRT, PrimeFactors).pop()
+    AffineHillSize = len(Info[2])
+    AffineHillInfo = list()
+    for i, Row in enumerate(Info):
+        if Row[0] == 'Affine-Hill':
+            AffineHillInfo.append(i)
+    for i in range(len(AffineHillInfo) // 2):
+        AffineHillKey = list()
+        for AHI in AffineHillInfo[:i + 1]:
+            Temp = list()
+            for Row in Info[AHI + 1:AHI + 4]:
+                for Num in Row:
+                    Temp.append(int(Num))
+            AffineHillKey.append(array(Temp).reshape((AffineHillSize, AffineHillSize)).tolist())
+        AffineHillB = list()
+        for AHI in AffineHillInfo[i + 1:]:
+            Temp = list()
+            for Row in Info[AHI + 1:AHI + 4]:
+                for Num in Row:
+                    Temp.append(int(Num))
+            AffineHillB.append(array(Temp).reshape((AffineHillSize, -1)).tolist())
     return N, PrimeFactors, AffineHillKey, AffineHillB
 
 
@@ -314,7 +320,7 @@ def Menu():
 if __name__ == '__main__':
     # a = ExtractFileInfo(r'C:\Users\User\Desktop\T3\1.txt', 'EA')
     GenerateKey()
-    # ExtractKeyInfo(r'C:\Users\User\Desktop\T3\Key.txt')
+    ExtractKeyInfo(r'C:\Users\User\Desktop\T3\Key.txt')
     # f = ModularDivision(a, c)
     # print(a)
     # print(b)
