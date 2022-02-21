@@ -15,7 +15,7 @@ def ExtractFileInfo(Path, Mode, Size=1):
                 Row = Row.strip().split(' ')
                 Temp = list()
                 for i in range(0, len(Row), Size):
-                    Temp.append(Row[i:i + Size])
+                    Temp.append(array(Row[i:i + Size]).reshape((Size, 1)).tolist())
                 CharCode.append(Temp)
     return CharCode
 
@@ -95,7 +95,6 @@ def ModularDivision(Mats, Factor):
 def SoloBlock(Rows, Size):
     HyperBlock = list()
     for Row in Rows:
-        # AppendedRow = ''.join(Row)
         BlockTemp = list()
         if len(Row) % Size == 0:
             Count = len(Row) // Size
@@ -110,6 +109,16 @@ def SoloBlock(Rows, Size):
             BlockTemp.append(Temp.tolist())
         HyperBlock.append(BlockTemp)
     return HyperBlock
+
+
+def Block(Rows, Size):
+    a = list()
+    for Row in Rows:
+        t = list()
+        for i in range(0, len(Row), Size):
+            t.append(Row[i:i + Size])
+        a.append(t)
+    return a
 
 
 def AffineHill(Rows, Keys, Bs, Bases, Mode):
@@ -137,6 +146,32 @@ def KeyStr2Int(KeyStr):
             KeyInt[i][j] = int(KeyStr.pop(0))
     KeyInt = KeyInt.tolist()
     return KeyInt
+
+
+def BlockStr2Int(BlockStr):
+    BlockInt = list()
+    for Row in BlockStr:
+        Temp1 = list()
+        for Char in Row:
+            Temp2 = list()
+            for Mat in Char:
+                Temp3 = list()
+                for Col in Mat:
+                    Temp4 = list()
+                    for Num in Col:
+                        Temp4.append(int(Num))
+                    Temp3.append(Temp4)
+                Temp2.append(Temp3)
+            Temp1.append(Temp2)
+        BlockInt.append(Temp1)
+    return BlockInt
+
+
+def MatInv(Mats, Bases):
+    Inv = list()
+    for i in range(len(Bases)):
+        Inv.append(Matrix(Mats[i]).inv_mod(Bases[i]).tolist())
+    return Inv
 
 
 def SolveCRT(Rows, Factors):
@@ -180,7 +215,7 @@ def GenerateKey():
     # AffineHillB = input('Enter Affine-Hill B values: ').split(' ')
     # KeyPath = input('Enter location to save key file: ') + '\Key.txt'
     N = '210'
-    AffineHillKeySTR = '10 25 41 87 110 96 203 141 7'.split(' ')
+    AffineHillKeySTR = '10 25 41 87 110 97 203 141 23'.split(' ')
     AffineHillB = '150 109 48'.split(' ')
     KeyPath = r'C:\Users\User\Desktop\T3\Key.txt'
     PrimeFactors = Factorize(int(N))
@@ -244,8 +279,11 @@ def Encrypt():
     EncryptedPath = r'C:\Users\User\Desktop\T3\Encrypted.txt'
     N, PrimeFactors, AffineHillKeys, AffineHillBs = ExtractKeyInfo(KeyPath)
     CharD = ExtractFileInfo(FilePath, 'EA')
+    print(CharD)
     CharH = SoloBlock(CharD, len(AffineHillKeys[0][0]))
+    print(CharH)
     CharAH = AffineHill(CharH, AffineHillKeys, AffineHillBs, PrimeFactors, 'E')
+    print(CharAH)
     with open(EncryptedPath, 'w') as EncryptedFile:
         for Row in CharAH:
             for Char in Row:
@@ -272,15 +310,6 @@ def Decrypt():
     DecryptedPath = r'C:\Users\User\Desktop\T3\Decrypted.txt'
     ASCIIDecryptedPath = r'C:\Users\User\Desktop\T3\DecryptedASCII.txt'
     N, PrimeFactors, AffineHillKey, AffineHillB = ExtractKeyInfo(KeyPath)
-    CharR = ExtractFileInfo(EncryptedPath, 'ER', len(PrimeFactors))
-    # print(CharR)
-    CharCRT = SolveCRT(CharR, PrimeFactors)
-    # print(CharCRT)
-    CharH = SoloBlock(CharCRT, len(AffineHillKey))
-    # print(CharH)
-    AffineHillKeyInv = Matrix(AffineHillKey).inv_mod(N).tolist()
-    # CharAH = AffineHill(CharH, AffineHillKeyInv, AffineHillB, N, 'D')
-    print(AffineHillKeyInv)
 
 
 def DiscoverKey():
