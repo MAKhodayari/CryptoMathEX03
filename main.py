@@ -43,39 +43,16 @@ def Factorize(Number):
     return Factor
 
 
-def ModularDivision(Rows, Factors, Mode):
+def ModularDivision(Mats, Factor):
     Remainder = list()
-    # if Mode == 'AHK':
-    #     for Row in Rows:
-    #         Temp1 = list()
-    #         for Num in Row:
-    #             Temp2 = list()
-    #             for Factor in Factors:
-    #                 Temp2.append(Num % Factor)
-    #             Temp1.append(Temp2)
-    #         Remainder.append(Temp1)
-    # elif Mode == 'AHB':
-    #     for Num in Rows:
-    #         Temp = list()
-    #         for Factor in Factors:
-    #             Temp.append(int(Num) % Factor)
-    #         Remainder.append(Temp)
-    # else:
-    for Row in Rows:
-        Temp1 = list()
-        for Mat in Row:
-            Temp2 = list()
-            for Col in Mat:
-                Temp3 = list()
-                for Num in Col:
-                    if Mode == 'B':
-                        Temp3.append(Num % Factors)
-                    elif Mode == 'PF':
-                        for Factor in Factors:
-                            Temp3.append(Num % Factor)
-                Temp2.append(Temp3)
-            Temp1.append(Temp2)
-        Remainder.append(Temp1)
+    for Mat in Mats:
+        Temp2 = list()
+        for Col in Mat:
+            Temp1 = list()
+            for Num in Col:
+                Temp1.append(Num % Factor)
+            Temp2.append(Temp1)
+        Remainder.append(Temp2)
     return Remainder
 
 
@@ -135,15 +112,21 @@ def SoloBlock(Rows, Size):
     return HyperBlock
 
 
-def AffineHill(Rows, Key, B, Base, Mode):
-    Temp = list()
-    for Mat in Rows:
-        if Mode == 'E':
-            Temp.append(add(matmul(Key, Mat), B).tolist())
-        elif Mode == 'D':
-            Temp.append(matmul(Key, subtract(Mat, B)).tolist())
-    AffineHillRes = ModularDivision(Temp, Base, 'B')
-    return AffineHillRes
+def AffineHill(Rows, Keys, Bs, Bases, Mode):
+    Res = list()
+    for Row in Rows:
+        Temp2 = list()
+        for Mat in Row:
+            Temp1 = list()
+            for i in range(len(Bases)):
+                if Mode == 'E':
+                    Temp1.append(add(matmul(Keys[i], Mat), Bs[i]).tolist())
+                elif Mode == 'D':
+                    Temp1.append(matmul(Keys[i], subtract(Mat, Bs[i])).tolist())
+                Temp1 = ModularDivision(Temp1, Bases[i])
+            Temp2.append(Temp1)
+        Res.append(Temp2)
+    return Res
 
 
 def KeyStr2Int(KeyStr):
@@ -233,21 +216,21 @@ def ExtractKeyInfo(Path):
         if Row[0] == 'Affine-Hill':
             AffineHillInfo.append(i)
     for i in range(len(AffineHillInfo) // 2):
-        AffineHillKey = list()
+        AffineHillKeys = list()
         for AHI in AffineHillInfo[:i + 1]:
             Temp = list()
             for Row in Info[AHI + 1:AHI + 4]:
                 for Num in Row:
                     Temp.append(int(Num))
-            AffineHillKey.append(array(Temp).reshape((AffineHillSize, AffineHillSize)).tolist())
-        AffineHillB = list()
+            AffineHillKeys.append(array(Temp).reshape((AffineHillSize, AffineHillSize)).tolist())
+        AffineHillBs = list()
         for AHI in AffineHillInfo[i + 1:]:
             Temp = list()
             for Row in Info[AHI + 1:AHI + 4]:
                 for Num in Row:
                     Temp.append(int(Num))
-            AffineHillB.append(array(Temp).reshape((AffineHillSize, -1)).tolist())
-    return N, PrimeFactors, AffineHillKey, AffineHillB
+            AffineHillBs.append(array(Temp).reshape((AffineHillSize, -1)).tolist())
+    return N, PrimeFactors, AffineHillKeys, AffineHillBs
 
 
 def Encrypt():
@@ -259,21 +242,17 @@ def Encrypt():
     FilePath = r'C:\Users\User\Desktop\T3\1.txt'
     ASCIIFilePath = r'C:\Users\User\Desktop\T3\OriginalASCII.txt'
     EncryptedPath = r'C:\Users\User\Desktop\T3\Encrypted.txt'
-    N, PrimeFactors, AffineHillKey, AffineHillB = ExtractKeyInfo(KeyPath)
+    N, PrimeFactors, AffineHillKeys, AffineHillBs = ExtractKeyInfo(KeyPath)
     CharD = ExtractFileInfo(FilePath, 'EA')
-    print(CharD)
-    CharH = SoloBlock(CharD, len(AffineHillKey))
-    print(CharH)
-    CharAH = AffineHill(CharH, AffineHillKey, AffineHillB, N, 'E')
-    print(CharAH)
-    CharR = ModularDivision(CharAH, PrimeFactors, 'PF')
-    print(CharR)
+    CharH = SoloBlock(CharD, len(AffineHillKeys[0][0]))
+    CharAH = AffineHill(CharH, AffineHillKeys, AffineHillBs, PrimeFactors, 'E')
     with open(EncryptedPath, 'w') as EncryptedFile:
-        for Row in CharR:
-            for Mat in Row:
-                for Col in Mat:
-                    for Num in Col:
-                        EncryptedFile.write(str(Num) + ' ')
+        for Row in CharAH:
+            for Char in Row:
+                for Mat in Char:
+                    for Col in Mat:
+                        for Num in Col:
+                            EncryptedFile.write(str(Num) + ' ')
             EncryptedFile.write('\n')
     with open(ASCIIFilePath, 'w') as ASCIIFile:
         for Row in CharD:
@@ -318,37 +297,27 @@ def Menu():
 
 
 if __name__ == '__main__':
-    # a = ExtractFileInfo(r'C:\Users\User\Desktop\T3\1.txt', 'EA')
-    GenerateKey()
-    ExtractKeyInfo(r'C:\Users\User\Desktop\T3\Key.txt')
-    # f = ModularDivision(a, c)
-    # print(a)
-    # print(b)
-    # print(c)
-    # print(d)
-    # print(e)
-    # print(f)
-    # print('Welcome.')
-    # print('Please select your desired action from the list below.' + '\n')
-    # Menu()
-    # Option = input('Which one do you choose? Option: ')
-    # print()
-    # while Option != '0':
-    #     if Option == '1':
-    #         GenerateKey()
-    #         print('Key generation successful.' + '\n' + 'Anything else?' + '\n')
-    #     elif Option == '2':
-    #         Encrypt()
-    #         print('Encryption  successful.' + '\n' + 'Anything else?' + '\n')
-    #     elif Option == '3':
-    #         Decrypt()
-    #         print('Decryption successful.' + '\n' + 'Anything else?' + '\n')
-    #     elif Option == '4':
-    #         DiscoverKey()
-    #         print('Key discovery successful.' + '\n' + 'Anything else?' + '\n')
-    #     else:
-    #         print('Wrong input. Try again.' + '\n')
-    #     Menu()
-    #     Option = input('Which one do you choose? Option: ')
-    #     print()
-    # print('Thank You.')
+    print('Welcome.')
+    print('Please select your desired action from the list below.' + '\n')
+    Menu()
+    Option = input('Which one do you choose? Option: ')
+    print()
+    while Option != '0':
+        if Option == '1':
+            GenerateKey()
+            print('Key generation successful.' + '\n' + 'Anything else?' + '\n')
+        elif Option == '2':
+            Encrypt()
+            print('Encryption  successful.' + '\n' + 'Anything else?' + '\n')
+        elif Option == '3':
+            Decrypt()
+            print('Decryption successful.' + '\n' + 'Anything else?' + '\n')
+        elif Option == '4':
+            DiscoverKey()
+            print('Key discovery successful.' + '\n' + 'Anything else?' + '\n')
+        else:
+            print('Wrong input. Try again.' + '\n')
+        Menu()
+        Option = input('Which one do you choose? Option: ')
+        print()
+    print('Thank You.')
