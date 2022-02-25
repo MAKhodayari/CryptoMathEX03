@@ -1,6 +1,7 @@
-from numpy import zeros, array, add, matmul, subtract
-from math import prod, sqrt
+from numpy import add, matmul, subtract
+from numpy import zeros, array
 from sympy import Matrix
+from math import prod, sqrt
 
 
 def ExtractFileInfo(Path, Mode, Size=1):
@@ -36,14 +37,14 @@ def Factorize(Number):
     Factor = set()
     if Number % 2 == 0:
         Factor.add(2)
-    for i in range(3, Number + 1, 2):
+    for i in range(3, Number, 2):
         if Number % i == 0 and Prime(i):
             Factor.add(i)
     Factor = list(Factor)
     return Factor
 
 
-def ModularDivision(Rows, Factor):
+def EncModularDivision(Rows, Factor):
     Remainder = list()
     for Mat in Rows:
         Temp2 = list()
@@ -54,42 +55,6 @@ def ModularDivision(Rows, Factor):
             Temp2.append(Temp1)
         Remainder.append(Temp2)
     return Remainder
-
-
-# def ModularDivision(Rows, Factors, Mode):
-#     Remainder = list()
-#     if Mode == 'AHK':
-#         for Row in Rows:
-#             Temp1 = list()
-#             for Num in Row:
-#                 Temp2 = list()
-#                 for Factor in Factors:
-#                     Temp2.append(Num % Factor)
-#                 Temp1.append(Temp2)
-#             Remainder.append(Temp1)
-#     elif Mode == 'AHB':
-#         for Num in Rows:
-#             Temp = list()
-#             for Factor in Factors:
-#                 Temp.append(int(Num) % Factor)
-#             Remainder.append(Temp)
-#     else:
-#         for Row in Rows:
-#             Temp1 = list()
-#             for Mat in Row:
-#                 Temp2 = list()
-#                 for Col in Mat:
-#                     Temp3 = list()
-#                     for Num in Col:
-#                         if Mode == 'B':
-#                             Temp3.append(Num % Factors)
-#                         elif Mode == 'PF':
-#                             for Factor in Factors:
-#                                 Temp3.append(Num % Factor)
-#                     Temp2.append(Temp3)
-#                 Temp1.append(Temp2)
-#             Remainder.append(Temp1)
-#     return Remainder
 
 
 def SoloBlock(Rows, Size):
@@ -112,64 +77,59 @@ def SoloBlock(Rows, Size):
 
 
 def Block(Rows, Size):
-    a = list()
+    NewBlock = list()
     for Row in Rows:
-        t = list()
+        Temp = list()
         for i in range(0, len(Row), Size):
-            t.append(Row[i:i + Size])
-        a.append(t)
-    return a
+            Temp.append(Row[i:i + Size])
+        NewBlock.append(Temp)
+    return NewBlock
 
 
-def AffineHill(Rows, Keys, Bs, Bases, Mode):
+def EncAffineHill(Rows, Keys, Bs, Bases):
     Res = list()
     for Row in Rows:
         Temp2 = list()
         for Mat in Row:
             Temp1 = list()
             for i in range(len(Bases)):
-                if Mode == 'E':
-                    Temp1.append(add(matmul(Keys[i], Mat), Bs[i]).tolist())
-                elif Mode == 'D':
-                    Temp1.append(matmul(Keys[i], subtract(Mat, Bs[i])).tolist())
-                Temp1 = ModularDivision(Temp1, Bases[i])
+                Temp1.append(add(matmul(Keys[i], Mat), Bs[i]).tolist())
+                Temp1 = EncModularDivision(Temp1, Bases[i])
             Temp2.append(Temp1)
         Res.append(Temp2)
     return Res
 
 
-def NewMD(Rows, Factors):
-    t5 = list()
+def DecNodularDivision(Rows, Factors):
+    Remainder = list()
     for Row in Rows:
-        t4 = list()
+        Temp4 = list()
         for Char in Row:
-            t3 = list()
+            Temp3 = list()
             for i in range(len(Factors)):
-                t2 = list()
+                Temp2 = list()
                 for Mat in Char[i]:
-                    t1 = list()
+                    Temp1 = list()
                     for Num in Mat:
-                        t1.append(Num % Factors[i])
-                    t2.append(t1)
-                t3.append(t2)
-            t4.append(t3)
-        t5.append(t4)
-    return t5
+                        Temp1.append(Num % Factors[i])
+                    Temp2.append(Temp1)
+                Temp3.append(Temp2)
+            Temp4.append(Temp3)
+        Remainder.append(Temp4)
+    return Remainder
 
 
-def NewAH(Rows, Keys, Bs, Bases):
-    ttt = list()
+def DecAffineHill(Rows, Keys, Bs, Bases):
+    Res = list()
     for Row in Rows:
-        tt = list()
+        Temp2 = list()
         for Char in Row:
-            t = list()
-            a = list()
+            Temp1 = list()
             for i in range(len(Bases)):
-                t.append(matmul(Keys[i], subtract(Char[i], Bs[i])).tolist())
-                # a = NewMD(t, Bases[i])
-            tt.append(t)
-        ttt.append(tt)
-    return ttt
+                Temp1.append(matmul(Keys[i], subtract(Char[i], Bs[i])).tolist())
+            Temp2.append(Temp1)
+        Res.append(Temp2)
+    return Res
 
 
 def KeyStr2Int(KeyStr):
@@ -201,14 +161,6 @@ def BlockStr2Int(BlockStr):
     return BlockInt
 
 
-def ReduceDepth(Rows):
-    NewDepth = list()
-    for Mat in Rows:
-        for Row in Mat:
-            NewDepth.append(Row)
-    return NewDepth
-
-
 def MatInv(Mats, Bases):
     Inv = list()
     for i in range(len(Bases)):
@@ -223,8 +175,6 @@ def SolveCRT(Rows, Factors, SizeAH):
     for Factor in Factors:
         N.append(P // Factor)
         Y.append(pow(N[-1], -1, Factor))
-    print(N)
-    print(Y)
     Num = list()
     for Row in Rows:
         Temp2 = list()
@@ -240,7 +190,7 @@ def SolveCRT(Rows, Factors, SizeAH):
     return Num
 
 
-def wtf(Rows, Factors, Mode):
+def AffineHillInfoMod(Rows, Factors, Mode):
     Ans = list()
     for Factor in Factors:
         Temp = list()
@@ -267,8 +217,8 @@ def GenerateKey():
     KeyPath = r'C:\Users\User\Desktop\T3\Key.txt'
     PrimeFactors = Factorize(int(N))
     AffineHillKey = KeyStr2Int(AffineHillKeySTR)
-    AffineHillKeyCRT = wtf(AffineHillKey, PrimeFactors, 'K')
-    AffineHillBCRT = wtf(AffineHillB, PrimeFactors, 'B')
+    AffineHillKeyCRT = AffineHillInfoMod(AffineHillKey, PrimeFactors, 'K')
+    AffineHillBCRT = AffineHillInfoMod(AffineHillB, PrimeFactors, 'B')
     with open(KeyPath, 'w') as KeyFile:
         KeyFile.write('N: {}\n'.format(N))
         for KeyCRT in AffineHillKeyCRT:
@@ -321,16 +271,13 @@ def Encrypt():
     # ASCIIFilePath = input('Enter location to save original file in ASCII format: ') + '\OriginalASCII.txt'
     # EncryptedPath = input('Enter location to save encrypted file: ') + '\Encrypted.txt'
     KeyPath = r'C:\Users\User\Desktop\T3\Key.txt'
-    FilePath = r'C:\Users\User\Desktop\T3\1.txt'
+    FilePath = r'C:\Users\User\Desktop\T3\Original.txt'
     ASCIIFilePath = r'C:\Users\User\Desktop\T3\OriginalASCII.txt'
     EncryptedPath = r'C:\Users\User\Desktop\T3\Encrypted.txt'
     N, PrimeFactors, AffineHillKeys, AffineHillBs = ExtractKeyInfo(KeyPath)
     CharD = ExtractFileInfo(FilePath, 'EA')
-    # print(CharD)
-    CharH = SoloBlock(CharD, len(AffineHillKeys[0][0]))
-    # print(CharH)
-    CharAH = AffineHill(CharH, AffineHillKeys, AffineHillBs, PrimeFactors, 'E')
-    # print(CharAH)
+    CharB = SoloBlock(CharD, len(AffineHillKeys[0]))
+    CharAH = EncAffineHill(CharB, AffineHillKeys, AffineHillBs, PrimeFactors)
     with open(EncryptedPath, 'w') as EncryptedFile:
         for Row in CharAH:
             for Char in Row:
@@ -358,27 +305,20 @@ def Decrypt():
     ASCIIDecryptedPath = r'C:\Users\User\Desktop\T3\DecryptedASCII.txt'
     N, PrimeFactors, AffineHillKey, AffineHillB = ExtractKeyInfo(KeyPath)
     CharR = ExtractFileInfo(EncryptedPath, 'ER', len(AffineHillKey[0]))
-    # print(CharR)
     CharB = Block(CharR, len(PrimeFactors))
-    # print(CharB)
     CharB = BlockStr2Int(CharB)
-    # print(CharB)
     AffineHillKeyInv = MatInv(AffineHillKey, PrimeFactors)
-    # print(AffineHillKeyInv)
-    CharAH = NewAH(CharB, AffineHillKeyInv, AffineHillB, PrimeFactors)
-    # print(CharAH)
-    CharMD = NewMD(CharAH, PrimeFactors)
-    # print(CharMD)
+    CharAH = DecAffineHill(CharB, AffineHillKeyInv, AffineHillB, PrimeFactors)
+    CharMD = DecNodularDivision(CharAH, PrimeFactors)
     CharCRT = SolveCRT(CharMD, PrimeFactors, len(AffineHillKey[0]))
-    # print(CharCRT)
     # This part is used to write decrypted text file
-    with open(DecryptedPath, 'w') as DecryptedFile:
-        for Row in CharCRT:
-            for Chars in Row:
-                for Char in Chars:
-                    # if Char != 0:
-                    DecryptedFile.write(chr(Char))
-            DecryptedFile.write('\n')
+    # with open(DecryptedPath, 'w') as DecryptedFile:
+    #     for Row in CharCRT:
+    #         for Chars in Row:
+    #             for Char in Chars:
+    #                 if Char != 0:
+    #                     DecryptedFile.write(chr(Char))
+    #         DecryptedFile.write('\n')
     with open(ASCIIDecryptedPath, 'w') as ASCIIDecryptedFile:
         for Row in CharCRT:
             for Chars in Row:
